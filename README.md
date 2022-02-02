@@ -8,6 +8,9 @@ In case you don't know, this is a bot that I've developed to play the online gam
 ## Single Robbery
 ![Single Robbery](media/single-robbery.gif "Single Robbery")
 
+## Single Robbery Mobile (thanks Willy)
+![Single Robbery](media/single-robbery-mobile.gif "Single Robbery")
+
 ## Gang Robbery
 No video availbale at the moment.
 
@@ -50,7 +53,7 @@ and all were working.
 
 ## How to use this POWERFUL bot :)
 
-Here below the steps needed to use the bot;
+Here below the steps needed to use the bot:
 
 1. Login with your account on The Crims website.
 2. Once logged in, open the **Developer Tools** of the browser (in Windows or GNU\Linux the shortcut is F12. If you are having trouble with this step search in Google how to do it). 
