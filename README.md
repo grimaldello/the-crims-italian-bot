@@ -262,7 +262,11 @@ Trainings.MARTIAL_ARTS_1h
 // Hunting
 const user = new User({
     useFirstRaveOfFavorites: false,
-    victimRespect: {min: 500, max: 50000},
+    huntingOptions: {
+        victimRespect: {min: 500, max: 4000, hitmanMaxRespect: 3000}, 
+        delayBeforeAttackUser: 0.5,
+        useOnlyHookersHouse: false  //hooker mansion has business_id = 4
+    },
     userActionToDo: UserActions.HUNTING, 
 });
 
@@ -271,7 +275,7 @@ const user = new User({
 With this bot configuration the bot will automatically start **Hunting** in random raves users to assault.\
 Before kill someone, the following checks are performed:
 - checks if as soon as entered the rave there's only one visitor: if there are more than 1 visitors, it will exit immediately (this is to avoid to be killed by another visitors in case of multiple visitors in the rave).
-- checks if victim respect is between min and max defined in property `victimRespect`
+- checks if victim respect is between min and max defined in property `victimRespect`. In case victim is a HITMAN, the max limit in this case is defined by the property `hitmanMaxRespect`.
 
 If the above conditions are matched, then it will kill the victim.
 
