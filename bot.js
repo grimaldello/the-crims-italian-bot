@@ -231,6 +231,7 @@ class User {
     #trainingsToDoList = [];
     #currentTrainingToDo = {};
     #victimRespect = {};
+    #huntingOptions = {};
 
     constructor(config=null) {
 
@@ -273,9 +274,9 @@ class User {
         
         // Hunting
         if(config.userActionToDo === UserActions.HUNTING  && 
-            config.victimRespect === undefined) {
+            config.huntingOptions === undefined) {
             
-            throw new Error("With HUNTING the parameter specificRob cannot be null or undefined");
+            throw new Error("With HUNTING the parameter huntingOptions cannot be null or undefined");
         }
 
         // Set default threshold
@@ -296,7 +297,7 @@ class User {
         this.#specificRob = config.specificRob;
         this.#trainingsToDoList = config.trainingsToDoList;
         this.#useFirstRaveOfFavorites = config.useFirstRaveOfFavorites;
-        this.#victimRespect = config.victimRespect;
+        this.#huntingOptions = config.huntingOptions;
 
     }
 
@@ -304,7 +305,8 @@ class User {
         return await new Promise(
             resolve => setTimeout(
                 resolve, 
-                RandomNumberGenerator.getIntegerRandomNumberBetween(pMin, pMax)*1000
+                // RandomNumberGenerator.getIntegerRandomNumberBetween(pMin, pMax)*1000
+                RandomNumberGenerator.getFloatRandomNumberBetween(pMin, pMax)*1000
             )
         );
     }
@@ -630,22 +632,30 @@ class User {
         await this.sleepRandomSecondsBetween(6, 9);
 
         // const nightclubsResponse = await this.doFindNightClubAjax();
-        const nightclubsResponse = this.doFindNightClubLocalStorage();
+        let nightclubsResponse = this.doFindNightClubLocalStorage();
 
+        // if useOnlyHookersHouse is true, filter only hooker mansions
+        if(this.#huntingOptions.useOnlyHookersHouse) {
+            nightclubsResponse.nightclubs = nightclubsResponse.nightclubs
+            .filter((nClub)=>{ return nClub.business_id == 4 });
+        }
 
         // Take the random rave from those without a limit on respect and level
         const filteredRavesList = nightclubsResponse.nightclubs
             .filter((nClub)=>{ return nClub.min_respect == null })
-            .filter((nClub)=>{ return nClub.level == null }); 
+            .filter((nClub)=>{ return nClub.level == null });
+
 
         if(filteredRavesList.length === 0) {
             this.#logger.logImportant(`NOT FOUND A SUITABLE RAVE. TRY TO SEARCH ANOTHER RAVE`);
             this.doHunting();
         }
+
         const randomIndexRave = RandomNumberGenerator.getIntegerRandomNumberBetween(0, filteredRavesList.length -1);
         this.#nightClubToEnter = filteredRavesList[randomIndexRave];
         
-        this.#logger.log(`Nightclub found: ${this.#nightClubToEnter.id}`);
+        this.#logger.log(`Rave type: ${this.#nightClubToEnter.name}`);
+        this.#logger.log(`Rave id: ${this.#nightClubToEnter.id}`);
 
         let enterNightclubResponse;
         try {
@@ -667,8 +677,21 @@ class User {
         if(this.#nightClubEntered && this.#nightClubEntered.visitors.length === 1) {
 
             candidateVictim = this.#nightClubEntered.visitors[0];
-            if((candidateVictim.respect <= this.#victimRespect.max) &&
-                        (candidateVictim.respect >= this.#victimRespect.min)) {
+
+            const isVictimHitman = candidateVictim.character_text_name.indexOf('HITMAN') > -1;
+
+            const victimMaxRespect = isVictimHitman ? this.#huntingOptions.victimRespect.hitmanMaxRespect : this.#huntingOptions.victimRespect.max;
+            const victimMinRespect = this.#huntingOptions.victimRespect.min;
+
+            if(isVictimHitman) {
+                this.#logger.logImportant(`Victim is a HITMAN. Max respect used: ${victimMaxRespect}`)
+            }
+            else {
+                this.#logger.logImportant(`Victim is NOT a HITMAN. Max respect used: ${victimMaxRespect}`)
+            }
+
+            if((candidateVictim.respect <= victimMaxRespect) &&
+                        (candidateVictim.respect >= victimMinRespect)) {
 
                 this.#singleAssaultToDo = {
                     victimId: candidateVictim.id,
@@ -678,6 +701,11 @@ class User {
                 }
                 try {
                     // singleAssaultResult = await this.doExecuteSingleAssaultAjax();
+
+                    await this.sleepRandomSecondsBetween(
+                        this.#huntingOptions.delayBeforeAttackUser, 
+                        this.#huntingOptions.delayBeforeAttackUser);
+
                     singleAssaultResult = this.doExecuteSingleAssaultAjax();
                     hasBeenAssaultedVictim = true;
 
@@ -1144,11 +1172,15 @@ const SingleRobberies = Object.freeze({
 // });
 
 // Hunting
-// const user = new User({
-//     useFirstRaveOfFavorites: false,
-//     victimRespect: {min: 500, max: 50000},
-//     userActionToDo: UserActions.HUNTING, 
-// });
+const user = new User({
+    useFirstRaveOfFavorites: false,
+    huntingOptions: {
+        victimRespect: {min: 500, max: 4000, hitmanMaxRespect: 3000}, 
+        delayBeforeAttackUser: 0.5,
+        useOnlyHookersHouse: false  //hooker mansion has business_id = 4
+    },
+    userActionToDo: UserActions.HUNTING, 
+});
 
 // Always call initialize method
 await user.initializeInfo();
