@@ -1172,15 +1172,15 @@ const SingleRobberies = Object.freeze({
 // });
 
 // Hunting
-const user = new User({
-    useFirstRaveOfFavorites: false,
-    huntingOptions: {
-        victimRespect: {min: 500, max: 4000, hitmanMaxRespect: 3000}, 
-        delayBeforeAttackUser: 0.5,
-        useOnlyHookersHouse: false  //hooker mansion has business_id = 4
-    },
-    userActionToDo: UserActions.HUNTING, 
-});
+// const user = new User({
+//     useFirstRaveOfFavorites: false,
+//     huntingOptions: {
+//         victimRespect: {min: 500, max: 4000, hitmanMaxRespect: 3000}, 
+//         delayBeforeAttackUser: 0.5,
+//         useOnlyHookersHouse: false  //hooker mansion has business_id = 4
+//     },
+//     userActionToDo: UserActions.HUNTING, 
+// });
 
 // Always call initialize method
 await user.initializeInfo();
