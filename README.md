@@ -43,6 +43,8 @@ I've tested the bot with the following configurations:
     - Brave Browser
 - Fedora Linux 35:
     - Firefox
+- Android
+  - Kiwi Browser (thanks to Willy for finding this)
 
 and all were working.
 
