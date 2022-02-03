@@ -1,17 +1,17 @@
 console.log(`
-████████╗██╗  ██╗███████╗     ██████╗██████╗ ██╗███╗   ███╗███████╗            
-╚══██╔══╝██║  ██║██╔════╝    ██╔════╝██╔══██╗██║████╗ ████║██╔════╝            
-   ██║   ███████║█████╗      ██║     ██████╔╝██║██╔████╔██║███████╗            
-   ██║   ██╔══██║██╔══╝      ██║     ██╔══██╗██║██║╚██╔╝██║╚════██║            
-   ██║   ██║  ██║███████╗    ╚██████╗██║  ██║██║██║ ╚═╝ ██║███████║            
-   ╚═╝   ╚═╝  ╚═╝╚══════╝     ╚═════╝╚═╝  ╚═╝╚═╝╚═╝     ╚═╝╚══════╝            
-                                                                               
+████████╗██╗  ██╗███████╗     ██████╗██████╗ ██╗███╗   ███╗███████╗
+╚══██╔══╝██║  ██║██╔════╝    ██╔════╝██╔══██╗██║████╗ ████║██╔════╝
+   ██║   ███████║█████╗      ██║     ██████╔╝██║██╔████╔██║███████╗
+   ██║   ██╔══██║██╔══╝      ██║     ██╔══██╗██║██║╚██╔╝██║╚════██║
+   ██║   ██║  ██║███████╗    ╚██████╗██║  ██║██║██║ ╚═╝ ██║███████║
+   ╚═╝   ╚═╝  ╚═╝╚══════╝     ╚═════╝╚═╝  ╚═╝╚═╝╚═╝     ╚═╝╚══════╝
+
 ██╗████████╗ █████╗ ██╗     ██╗ █████╗ ███╗   ██╗    ██████╗  ██████╗ ████████╗
 ██║╚══██╔══╝██╔══██╗██║     ██║██╔══██╗████╗  ██║    ██╔══██╗██╔═══██╗╚══██╔══╝
-██║   ██║   ███████║██║     ██║███████║██╔██╗ ██║    ██████╔╝██║   ██║   ██║   
-██║   ██║   ██╔══██║██║     ██║██╔══██║██║╚██╗██║    ██╔══██╗██║   ██║   ██║   
-██║   ██║   ██║  ██║███████╗██║██║  ██║██║ ╚████║    ██████╔╝╚██████╔╝   ██║   
-╚═╝   ╚═╝   ╚═╝  ╚═╝╚══════╝╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝    ╚═════╝  ╚═════╝    ╚═╝                                                                                                                               
+██║   ██║   ███████║██║     ██║███████║██╔██╗ ██║    ██████╔╝██║   ██║   ██║
+██║   ██║   ██╔══██║██║     ██║██╔══██║██║╚██╗██║    ██╔══██╗██║   ██║   ██║
+██║   ██║   ██║  ██║███████╗██║██║  ██║██║ ╚████║    ██████╔╝╚██████╔╝   ██║
+╚═╝   ╚═╝   ╚═╝  ╚═╝╚══════╝╚═╝╚═╝  ╚═╝╚═╝  ╚═══╝    ╚═════╝  ╚═════╝    ╚═╝
 `)
 
 
@@ -81,7 +81,7 @@ class Logger {
         }
         else {
             console.log(pMessage);
-        }  
+        }
     }
 }
 
@@ -135,7 +135,7 @@ class PageNavigator {
         else {
             this.#logger.log(`Navigating to Robebry Page...`);
             $(`#${this.#MENU_MAP.ROBBERY}`).click();
-            
+
         }
     }
 
@@ -185,7 +185,7 @@ class RequestFactory {
         $.ajaxSetup(ajaxSetupObject);
 
         return await $.get(pUrl, pData);;
-        
+
     }
 
     static async makePOSTAjaxRequestPromise(pUrl=null, customHeaders={}, pData={}) {
@@ -195,16 +195,17 @@ class RequestFactory {
         }
 
         const ajaxSetupObject = {
-            dataType: "json",
+            // dataType: "json",
             crossDomain: true,
-            contentType: "application/json;charset=UTF-8",
+            accepts: {"*": "application/json, text/plain, */*'" },
+            contentType: "application/json",
             headers: customHeaders
         };
 
         $.ajaxSetup(ajaxSetupObject);
 
         return await $.post(pUrl, JSON.stringify(pData));
-        
+
     }
 }
 
@@ -220,7 +221,7 @@ class User {
     #userActionToDo;
     #specificRob;
     #useFirstRaveOfFavorites;
-    
+
 
     #userInfoAndStats = {};
     #customHeaders = {};
@@ -239,20 +240,20 @@ class User {
         this.#pageNavigator = new PageNavigator();
 
         if(config === null) {
-            
+
             throw new Error("User configuration object cannot be null. Please pass corret configuration object in new User({}) invocation");
         }
 
         if(config.userActionToDo === undefined) {
-            
+
             throw new Error("userActionToDo cannot be undefined");
         }
 
         // Check Specific Single Robbery and Gang Robbery parameters
         if((config.userActionToDo === UserActions.SINGLE_ROBBERY_SPECIFIC_ROB ||
-            config.userActionToDo === UserActions.GANG_ROBBERY) && 
+            config.userActionToDo === UserActions.GANG_ROBBERY) &&
             config.specificRob === undefined) {
-            
+
             throw new Error("With SINGLE_ROBBERY_SPECIFIC_ROB and GANG_ROBBERY the parameter specificRob cannot be undefined");
         }
 
@@ -271,24 +272,24 @@ class User {
                 throw new Error("With TRAINING the parameter trainingsToDoList cannot be greater than 2");
             }
         }
-        
+
         // Hunting
-        if(config.userActionToDo === UserActions.HUNTING  && 
+        if(config.userActionToDo === UserActions.HUNTING  &&
             config.huntingOptions === undefined) {
-            
+
             throw new Error("With HUNTING the parameter huntingOptions cannot be null or undefined");
         }
 
         // Set default threshold
         if(config.addictionThreshold === undefined) {
             config.addictionThreshold = 5;
-            this.#logger.logImportant(`WARNING addictionThreshold not defined. Will be used 5 as default value`);  
+            this.#logger.logImportant(`WARNING addictionThreshold not defined. Will be used 5 as default value`);
         }
 
         // Favorites Rave
         if(config.useFirstRaveOfFavorites === undefined) {
             config.useFirstRaveOfFavorites = false;
-            this.#logger.logImportant(`WARNING useFirstRaveOfFavorites not defined. Will be used a random rave`); 
+            this.#logger.logImportant(`WARNING useFirstRaveOfFavorites not defined. Will be used a random rave`);
         }
 
         this.#addictionThreshold = config.addictionThreshold;
@@ -304,7 +305,7 @@ class User {
     async sleepRandomSecondsBetween(pMin, pMax) {
         return await new Promise(
             resolve => setTimeout(
-                resolve, 
+                resolve,
                 // RandomNumberGenerator.getIntegerRandomNumberBetween(pMin, pMax)*1000
                 RandomNumberGenerator.getFloatRandomNumberBetween(pMin, pMax)*1000
             )
@@ -323,21 +324,21 @@ class User {
 
     async doFindSingleRobberiesAjax() {
         return await RequestFactory.makeGETAjaxRequestPromise(
-            Urls.ROBBERIES_URL, 
+            Urls.ROBBERIES_URL,
             this.#customHeaders
         );
     }
 
     async doFindNightClubAjax() {
         return await RequestFactory.makeGETAjaxRequestPromise(
-            Urls.NIGHTCLUBS_PAGE_URL, 
+            Urls.NIGHTCLUBS_PAGE_URL,
             this.#customHeaders
         );
     }
 
     async doEnterNightclubAjax() {
         return await RequestFactory.makePOSTAjaxRequestPromise(
-            Urls.NIGHTCLUB_ENTER_URL, 
+            Urls.NIGHTCLUB_ENTER_URL,
             this.#customHeaders,
             FactoryPOSTData.getEnterRavePOSTData(this.#nightClubToEnter.id)
         );
@@ -345,7 +346,7 @@ class User {
 
     async doExitNightclubAjax() {
         return await RequestFactory.makePOSTAjaxRequestPromise(
-            Urls.NIGHTCLUB_EXIT_URL, 
+            Urls.NIGHTCLUB_EXIT_URL,
             this.#customHeaders,
             FactoryPOSTData.getExitNightClubPOSTData(this.#nightClubEntered.exit_key)
         );
@@ -353,7 +354,7 @@ class User {
 
     async doBuyDrugEnteredNightclubAjax() {
         return await RequestFactory.makePOSTAjaxRequestPromise(
-            Urls.NIGHTCLUB_DRUG_URL, 
+            Urls.NIGHTCLUB_DRUG_URL,
             this.#customHeaders,
             FactoryPOSTData.getDrugPOSTData(this.#nightClubEntered.products.drugs[0].id)
         );
@@ -361,7 +362,7 @@ class User {
 
     async doSingleRobberyAjax() {
         return await RequestFactory.makePOSTAjaxRequestPromise(
-            Urls.ROBBERY_SINGLE_URL, 
+            Urls.ROBBERY_SINGLE_URL,
             this.#customHeaders,
             FactoryPOSTData.getSingleRobberyPOSTData(this.#singleRobberyCalculatedToDo.id)
         );
@@ -369,7 +370,7 @@ class User {
 
     async doAcceptGangRobberyAjax() {
         return await RequestFactory.makePOSTAjaxRequestPromise(
-            Urls.ROBBERY_GANG_ACCEPT_URL, 
+            Urls.ROBBERY_GANG_ACCEPT_URL,
             this.#customHeaders,
             FactoryPOSTData.getAcceptGangRobberyPOSTData()
         );
@@ -377,7 +378,7 @@ class User {
 
     async doExecuteGangRobberyAjax() {
         return await RequestFactory.makePOSTAjaxRequestPromise(
-            Urls.ROBBERY_GANG_EXECUTE_URL, 
+            Urls.ROBBERY_GANG_EXECUTE_URL,
             this.#customHeaders,
             FactoryPOSTData.getExecuteGangRobberyPOSTData()
         );
@@ -387,7 +388,7 @@ class User {
         // return await RequestFactory.makePOSTAjaxRequestPromise(
         return RequestFactory.makePOSTAjaxRequestPromise(
 
-            Urls.SINGLE_ASSAUTL_URL, 
+            Urls.SINGLE_ASSAUTL_URL,
             this.#customHeaders,
             FactoryPOSTData.getExecuteSingleAssaultPOSTData(
                 this.#singleAssaultToDo.victimId,
@@ -400,7 +401,7 @@ class User {
 
     // async doBuyHospitalHealingsAjax() {
     //     return await RequestFactory.makePOSTAjaxRequestPromise(
-    //         Urls.HEALINGS_URL, 
+    //         Urls.HEALINGS_URL,
     //         this.#customHeaders,
     //         FactoryPOSTData.getHealingsPOSTData(10, this.#userInfoAndStats.addiction)
     //     );
@@ -408,7 +409,7 @@ class User {
 
     async doBuyMethadoneHealingsAjax() {
         return await RequestFactory.makePOSTAjaxRequestPromise(
-            Urls.HEALINGS_URL, 
+            Urls.HEALINGS_URL,
             this.#customHeaders,
             FactoryPOSTData.getHealingsPOSTData(Healings.CURE_ADDICTION.id, this.#userInfoAndStats.addiction)
         );
@@ -416,7 +417,7 @@ class User {
 
     async doTrainingAjax() {
         return await RequestFactory.makePOSTAjaxRequestPromise(
-            Urls.TRAINING_URL, 
+            Urls.TRAINING_URL,
             this.#customHeaders,
             FactoryPOSTData.getTrainingPOSTData(this.#currentTrainingToDo.type, this.#currentTrainingToDo.time)
         );
@@ -432,7 +433,7 @@ class User {
 
         this.#logger.log(nightclubsResponse.nightclubs);
 
-        nightClubFound = 
+        nightClubFound =
         nightclubsResponse.nightclubs.filter((nClub)=>{ return nClub.owner_id === pOwnerId});
         // this.#logger.log(`Nightclub found: ${this.stringifyObjectFormatted(this.#nightClubFound)}`);
 
@@ -486,7 +487,7 @@ class User {
             if(userFavoritesNightclubsList.length > 0) {
                 this.#logger.logImportant(`Using first rave of user in favorites`);
                 this.#nightClubToEnter = userFavoritesNightclubsList[0]; // Take the first rave from the list
-            }            
+            }
             else{
                 throw new Error("No rave found in user favorites. Buy one or use a random rave (useFirstRaveOfFavorites: false)")
             }
@@ -523,9 +524,9 @@ class User {
     }
 
     async needToRecharge() {
-        if(this.#userActionToDo === UserActions.SINGLE_ROBBERY_SPECIFIC_ROB || 
+        if(this.#userActionToDo === UserActions.SINGLE_ROBBERY_SPECIFIC_ROB ||
             this.#userActionToDo === UserActions.GANG_ROBBERY) {
-            // SINGLE_ROBBERY_SPECIFIC_ROB and GANG_ROBBERY threshold energy is determinated 
+            // SINGLE_ROBBERY_SPECIFIC_ROB and GANG_ROBBERY threshold energy is determinated
             // by the specific rob we are peroforming
             return this.#userInfoAndStats.stamina < this.#specificRob.energy;
         }
@@ -594,12 +595,12 @@ class User {
                 switch (this.#currentTrainingToDo.time) {
                     case "30min":
                         // Wait 35 minutes
-                        // (5 minutes more than the necessary to avoid possibile issue) 
+                        // (5 minutes more than the necessary to avoid possibile issue)
                         await this.sleepRandomSecondsBetween(35*60, 35*60);
                         break;
                     case "1h":
                         // Wait 1 hour and 5 minutes
-                        // (5 minutes more than the necessary to avoid possibile issue) 
+                        // (5 minutes more than the necessary to avoid possibile issue)
                         await this.sleepRandomSecondsBetween(65*60, 65*60);
                         break
                 }
@@ -653,7 +654,7 @@ class User {
 
         const randomIndexRave = RandomNumberGenerator.getIntegerRandomNumberBetween(0, filteredRavesList.length -1);
         this.#nightClubToEnter = filteredRavesList[randomIndexRave];
-        
+
         this.#logger.log(`Rave type: ${this.#nightClubToEnter.name}`);
         this.#logger.log(`Rave id: ${this.#nightClubToEnter.id}`);
 
@@ -670,7 +671,7 @@ class User {
             this.doHunting();
         }
 
-        
+
         let singleAssaultResult = null;
         let candidateVictim = null;
         // Only if there's 1 visitor check it is "killable"
@@ -703,7 +704,7 @@ class User {
                     // singleAssaultResult = await this.doExecuteSingleAssaultAjax();
 
                     await this.sleepRandomSecondsBetween(
-                        this.#huntingOptions.delayBeforeAttackUser, 
+                        this.#huntingOptions.delayBeforeAttackUser,
                         this.#huntingOptions.delayBeforeAttackUser);
 
                     singleAssaultResult = this.doExecuteSingleAssaultAjax();
@@ -717,12 +718,12 @@ class User {
                     this.doHunting();
                 }
             }
-            
+
         }
 
         this.doExitNightclubAjax();
         this.#logger.logImportant("EXIT FROM RAVE (pressed Exit button)");
-        
+
         if(hasBeenAssaultedVictim === true){
             this.#logger.logImportant(`Assaulted a User: ${candidateVictim.username}`);
             // if(singleAssaultResult === undefined) {
@@ -741,7 +742,7 @@ class User {
                 }
             });
             this.#logger.logImportant('CHECK LOGS FOR DETAILS ABOUT ASSAULT');
-            
+
             await this.sleepRandomSecondsBetween(5,6);
             await this.doRechargeStamina();
         }
@@ -779,13 +780,13 @@ class User {
             this.#pageNavigator.navigateToRobberyPage();
 
             await this.sleepRandomSecondsBetween(1,3);
-    
+
             let isEnabledAccept = $($("#gangrobbery-accept")[0]).attr("style") === undefined || $($("#gangrobbery-accept")[0]).attr("style") === '';
             let isEnabledExecute = $($("#gangrobbery-execute")[0]).attr("style") === undefined || $($("#gangrobbery-execute")[0]).attr("style") === '';
-        
+
             this.#logger.log(`Accept button found: ${isEnabledAccept ? 'YES' : 'NO'}`);
             this.#logger.log(`Execute button found: ${isEnabledExecute? 'YES' : 'NO'}`);
-    
+
             if(isEnabledAccept) {
                 await this.doAcceptGangRobberyAjax();
                 this.#logger.log("Accepted Gang Robbery");
@@ -802,12 +803,12 @@ class User {
             await this.sleepRandomSecondsBetween(1,3);
 
             await this.doRechargeStamina();
-    
+
         } catch (error) {
             console.error(error);
             this.doRechargeStamina();
         }
-    
+
 
     }
 
@@ -842,18 +843,18 @@ class User {
 
             // Once opened the page, wait some random time
             await this.sleepRandomSecondsBetween(1,3);
-    
+
             // Find Single Robberies List
             const singleRobberiesResponse = await this.doFindSingleRobberiesLocalStorage();
             this.#singleRobberyCalculatedToDo = this.calculateSingleRobberyToDo(singleRobberiesResponse.singleRobberies);
 
-    
+
             // Calculate Single Robbery to do
-    
+
             // If this.#singleRobberyCalculatedToDo is null, it means that energy
             if(this.#singleRobberyCalculatedToDo !== null) {
                 this.#logger.logImportant(`Single Robbery calculated: ${this.#singleRobberyCalculatedToDo.long_name}`);
-    
+
                 const singleRobberyResponse = await this.doSingleRobberyAjax();
                 if(singleRobberyResponse.messages[0] && singleRobberyResponse.messages[0][0]) {
                     singleRobberyResponse.messages[0][0].split("<br />").map((e)=>{this.#logger.logSuccess(`${e} \n`)});
@@ -862,11 +863,11 @@ class User {
                 // Update user info
                 this.doUpdateUserInfoAndStats(singleRobberyResponse.user);
             }
-    
+
             await this.sleepRandomSecondsBetween(1,3);
-    
+
             await this.doRechargeStamina();
-            
+
         } catch (error) {
             console.error(error);
             this.doRechargeStamina();
@@ -894,7 +895,7 @@ class User {
         this.#logger.log(`Cash: ${Utils.cashFormatter.format(this.#userInfoAndStats.cash)}`);
         // this.#logger.log(`Bank: ${Utils.cashFormatter.format(this.#userInfoAndStats.bank)}`);
         this.#logger.log('************************************************');
-    } 
+    }
 
     async doUpdateUserInfoAndStats(pUser=null) {
         if(pUser===null) {
@@ -945,25 +946,25 @@ class User {
             this.#pageNavigator.navigateToNightLifePage();
 
             await this.sleepRandomSecondsBetween(1,3);
-    
+
             // Make sure user data are update before go on
             await this.doUpdateUserInfoAndStats();
-    
+
             // Check detox is needed
             if(await this.needToDetox()) {
                 this.#logger.log(`Addiction is greater or equals to threshold (${this.#addictionThreshold})`);
                 this.#logger.log(`Current Addiction is: ${this.#userInfoAndStats.addiction}`);
                 this.#logger.logImportant(`Detox IS necessary`);
-    
+
                 await this.doDetox();
             }
             else {
                 this.#logger.log(`Addiction is lower than threshold (${this.#addictionThreshold})`);
                 this.#logger.log(`Current Addiction is: ${this.#userInfoAndStats.addiction}`);
                 this.#logger.logImportant(`Detox NOT necessary`);
-    
+
             }
-    
+
             // Check recharge is needed
             if(await this.needToRecharge()) {
                 this.#logger.log(`Current stamina is: ${this.#userInfoAndStats.stamina}`);
@@ -973,24 +974,24 @@ class User {
                 const enterNightclubResponse = await this.doEnterNightclubAjax();
                 this.#nightClubEntered = enterNightclubResponse.nightclub;
                 this.#logger.log(`Enter in rave`);
-    
+
                 const boughtDrugResponse = await this.doBuyDrugEnteredNightclubAjax();
                 this.#logger.logImportant(`Bought drug`);
                 this.#logger.logImportant(`Curent stamina: ${boughtDrugResponse.user.stamina}`);
-    
+
                 // Exit nightclub
                 await this.doExitNightclubAjax();
                 this.#logger.logImportant("EXIT FROM RAVE (pressed Exit button)");
-    
+
                 await this.doUpdateUserInfoAndStats();
-    
-    
+
+
             }
             else {
                 this.#logger.log(`Current stamina is: ${this.#userInfoAndStats.stamina}`);
                 this.#logger.logImportant(`Stamina recharge NOT necessary`);
             }
-    
+
             this.decideWhatToDo();
         }
         catch(error) {
@@ -1016,15 +1017,15 @@ class FactoryPOSTData {
     static getEnterRavePOSTData(pNightclubId) {
         return {id: pNightclubId, input_counters: {}, action_timestamp: Date.now()};
     }
-    
+
     static getDrugPOSTData(pDrugId) {
         return {id: pDrugId, input_counters: {}, action_timestamp: Date.now()};
     }
-    
+
     static getHealingsPOSTData(pTypeId, pQuantity) {
         return {id: pTypeId, quantity:""+pQuantity, input_counters: {}, action_timestamp: Date.now()};
     }
-    
+
     static getSingleRobberyPOSTData(pSinglRobberyId) {
         return {id: pSinglRobberyId, full:true, tickets:null, items:[], input_counters:{}, action_timestamp: Date.now()};
     }
@@ -1044,7 +1045,7 @@ class FactoryPOSTData {
         pCreatedAt,
     ) {
         return {
-            victim_id: pVictimId, 
+            victim_id: pVictimId,
             encountered_at:pEncounteredAt,
             assault_key: pAssaultKey,
             created_at: pCreatedAt,
@@ -1143,16 +1144,16 @@ const SingleRobberies = Object.freeze({
 
 
 // Single Robbery
-// const user = new User({
-//     useFirstRaveOfFavorites: false,
-//     userActionToDo: UserActions.SINGLE_ROBBERY, 
-// });
+const user = new User({
+    useFirstRaveOfFavorites: false,
+    userActionToDo: UserActions.SINGLE_ROBBERY,
+});
 
 
 // Single Robbery Specific Rob
 // const user = new User({
 //     useFirstRaveOfFavorites: false,
-//     userActionToDo: UserActions.SINGLE_ROBBERY_SPECIFIC_ROB, 
+//     userActionToDo: UserActions.SINGLE_ROBBERY_SPECIFIC_ROB,
 //     specificRob: SingleRobberies.CHUCK_NORRIS
 // });
 
@@ -1160,14 +1161,14 @@ const SingleRobberies = Object.freeze({
 // Gang Robbery
 // const user = new User({
 //     useFirstRaveOfFavorites: false,
-//     userActionToDo: UserActions.GANG_ROBBERY, 
+//     userActionToDo: UserActions.GANG_ROBBERY,
 //     specificRob: GangRobberies.BANK
 // });
 
 // Training
 // const user = new User({
 //     useFirstRaveOfFavorites: false,
-//     userActionToDo: UserActions.TRAINING, 
+//     userActionToDo: UserActions.TRAINING,
 //     trainingsToDoList: [Trainings.MARTIAL_ARTS_30min, Trainings.EDUCATION_30min]
 // });
 
@@ -1175,11 +1176,11 @@ const SingleRobberies = Object.freeze({
 // const user = new User({
 //     useFirstRaveOfFavorites: false,
 //     huntingOptions: {
-//         victimRespect: {min: 500, max: 4000, hitmanMaxRespect: 3000}, 
+//         victimRespect: {min: 500, max: 4000, hitmanMaxRespect: 3000},
 //         delayBeforeAttackUser: 0.5,
 //         useOnlyHookersHouse: false  //hooker mansion has business_id = 4
 //     },
-//     userActionToDo: UserActions.HUNTING, 
+//     userActionToDo: UserActions.HUNTING,
 // });
 
 // Always call initialize method
