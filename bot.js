@@ -1144,10 +1144,10 @@ const SingleRobberies = Object.freeze({
 
 
 // Single Robbery
-const user = new User({
-    useFirstRaveOfFavorites: false,
-    userActionToDo: UserActions.SINGLE_ROBBERY,
-});
+// const user = new User({
+//     useFirstRaveOfFavorites: false,
+//     userActionToDo: UserActions.SINGLE_ROBBERY,
+// });
 
 
 // Single Robbery Specific Rob
@@ -1178,7 +1178,7 @@ const user = new User({
 //     huntingOptions: {
 //         victimRespect: {min: 500, max: 4000, hitmanMaxRespect: 3000},
 //         delayBeforeAttackUser: 0.5,
-//         useOnlyHookersHouse: false  //hooker mansion has business_id = 4
+//         useOnlyHookersHouse: false
 //     },
 //     userActionToDo: UserActions.HUNTING,
 // });
