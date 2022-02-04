@@ -265,7 +265,7 @@ const user = new User({
     huntingOptions: {
         victimRespect: {min: 500, max: 4000, hitmanMaxRespect: 3000}, 
         delayBeforeAttackUser: 0.5,
-        useOnlyHookersHouse: false  //hooker mansion has business_id = 4
+        useOnlyHookersHouse: false
     },
     userActionToDo: UserActions.HUNTING, 
 });
