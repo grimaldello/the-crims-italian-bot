@@ -872,8 +872,13 @@ class User {
 
                 await this.sleepRandomSecondsBetween(1,3);
 
-                if(this.needToRecharge()) {
+                this.#pageNavigator.navigateToRandomPage();
+
+                if(await this.needToRecharge()) {
                     await this.doRechargeStamina();
+                }
+                else {
+                    this.doGangRobbery();
                 }
             }
             else if(isEnabledExecute) {
@@ -886,8 +891,13 @@ class User {
 
                 await this.sleepRandomSecondsBetween(1,3);
 
-                if(this.needToRecharge()) {
+                this.#pageNavigator.navigateToRandomPage();
+
+                if(await this.needToRecharge()) {
                     await this.doRechargeStamina();
+                }
+                else {
+                    this.doGangRobbery();
                 }
             }
             else {
