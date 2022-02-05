@@ -12,7 +12,7 @@ In case you don't know, this is a bot that I've developed to play the online gam
 ![Single Robbery](media/single-robbery-mobile.gif "Single Robbery")
 
 ## Gang Robbery
-No video availbale at the moment.
+No video available at the moment.
 
 ## Hunting
 No video available at the moment, but this is what you see when the bot kill someone:
@@ -29,7 +29,7 @@ BUT, if you know how can be modified the bot in order to not get caught (or to r
 
 # Rounds Compatibility
 I've developed the bot starting from **round 136**.\
-I will try to maintain the bot for all other rounds (no promieses).
+I will try to maintain the bot for all other rounds (no promises).
 
 Any help is appreciated :)
 
@@ -106,13 +106,13 @@ At the bottom of `bot.js` file you will find these parts of code:
 //     userActionToDo: UserActions.HUNTING, 
 // });
 ```
-These are all **predefined temaplates** of **Actions** that you can do with the bot.
+These are all **predefined templates** of **Actions** that you can do with the bot.
 
 All **Actions** include **recharge stamina** and **detox** functionalities and will be executed automatically.
 
 The **rave** used to **recharge stamina** must be one with beer inside.
 
-You can cahnge the value of property `useFirstRaveOfFavorites` with the following values:
+You can change the value of property `useFirstRaveOfFavorites` with the following values:
 - set it to `true` to use the first rave in favorites list (be sure there's one)
 - set it to `false` to use a random one picked from 
 nightlife.
