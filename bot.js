@@ -635,6 +635,7 @@ class User {
                 break;
             case UserActions.GANG_ROBBERY:
                 this.doGangRobbery();
+                // this.doGangRobberyWebSocket();
                 break;
             case UserActions.TRAINING:
                 this.doTraining();
@@ -747,9 +748,9 @@ class User {
             this.doHunting();
         }
 
-
         let singleAssaultResult = null;
         let candidateVictim = null;
+
         // Only if there's 1 visitor check it is "killable"
         if(this.#nightClubEntered && this.#nightClubEntered.visitors.length === 1) {
 
@@ -850,12 +851,47 @@ class User {
         }
     }
 
+    // async doGangRobberyWebSocket() {
+    //     // $.getScript( "https://js.pusher.com/5.1.1/pusher.min.js", function( data, textStatus, jqxhr ) {
+    //         // console.log( data ); // Data returned
+    //         // console.log( textStatus ); // Success
+    //         // console.log( jqxhr.status ); // 200
+    //         // console.log( "Load was performed." );
+
+    //         var pusher = new Pusher("4d1de0a9de985ae2f51d", {
+    //             cluster: "",
+    //         });
+
+    //         var channel = pusher.subscribe("68d16904064d696ac2b8d43b89e55404");
+
+
+    //         channel.bind("update-planned-robbery", (data) => {
+    //             console.log(data);
+    //             if(data.indexOf('create') > -1) {
+    //                console.log("NEED TO ACCEPT");
+    //             }
+    //             else if(data.indexOf('populate') > -1) {
+    //                 console.log("NEED TO EXECUTE");
+    //             }
+    //         });
+
+    //         channel.bind("nightclub-update", (data) => {
+    //             console.log(data);
+    //         });
+    //         channel.bind("nightclub-update-visitors", (data) => {
+    //             console.log(data);
+    //         });
+
+        
+    //     // });
+    // }
+
     async doGangRobbery() {
 
         try {
             this.#pageNavigator.navigateToRobberyPage();
 
-            await this.sleepRandomSecondsBetween(1,3);
+            await this.sleepRandomSecondsBetween(0.2, 0.4);
 
             let isEnabledAccept = $($("#gangrobbery-accept")[0]).attr("style") === undefined || $($("#gangrobbery-accept")[0]).attr("style") === '';
             let isEnabledExecute = $($("#gangrobbery-execute")[0]).attr("style") === undefined || $($("#gangrobbery-execute")[0]).attr("style") === '';
@@ -867,38 +903,16 @@ class User {
                 const gangRobberyResponse = await this.doAcceptGangRobberyAjax();
                 this.#logger.log("Accepted Gang Robbery");
 
-                // Update user info
-                this.doUpdateUserInfoAndStats(gangRobberyResponse.user);
-
-                await this.sleepRandomSecondsBetween(1,3);
-
-                this.#pageNavigator.navigateToRandomPage();
-
-                if(await this.needToRecharge()) {
-                    await this.doRechargeStamina();
-                }
-                else {
-                    this.doGangRobbery();
-                }
+                // Update user info and perform decision
+                this.postGangRobbery(gangRobberyResponse);
             }
             else if(isEnabledExecute) {
                 const gangRobberyResponse = await this.doExecuteGangRobberyAjax();
 
                 this.#logger.log("Executed Gang Robbery");
 
-                // Update user info
-                this.doUpdateUserInfoAndStats(gangRobberyResponse.user);
-
-                await this.sleepRandomSecondsBetween(1,3);
-
-                this.#pageNavigator.navigateToRandomPage();
-
-                if(await this.needToRecharge()) {
-                    await this.doRechargeStamina();
-                }
-                else {
-                    this.doGangRobbery();
-                }
+                // Update user info and perform decision
+                this.postGangRobbery(gangRobberyResponse);
             }
             else {
                 this.#logger.log("Waiting for others to accept...");
@@ -913,6 +927,22 @@ class User {
         }
 
 
+    }
+
+    async postGangRobbery(pGangRobberyResponse) {
+        // Update user info
+        this.doUpdateUserInfoAndStats(pGangRobberyResponse.user);
+
+        await this.sleepRandomSecondsBetween(0.1, 1);
+
+        this.#pageNavigator.navigateToRandomPage();
+
+        if(await this.needToRecharge()) {
+            await this.doRechargeStamina();
+        }
+        else {
+            this.doGangRobbery();
+        }
     }
 
     calculateSingleRobberyToDo(pSingleRobberiesList) {
@@ -945,10 +975,10 @@ class User {
             this.#pageNavigator.navigateToRobberyPage();
 
             // Once opened the page, wait some random time
-            await this.sleepRandomSecondsBetween(1,3);
+            await this.sleepRandomSecondsBetween(1,2);
 
             // Find Single Robberies List
-            const singleRobberiesResponse = await this.doFindSingleRobberiesLocalStorage();
+            const singleRobberiesResponse = this.doFindSingleRobberiesLocalStorage();
             this.#singleRobberyCalculatedToDo = this.calculateSingleRobberyToDo(singleRobberiesResponse.singleRobberies);
 
 
@@ -967,13 +997,13 @@ class User {
                 this.doUpdateUserInfoAndStats(singleRobberyResponse.user);
             }
 
-            await this.sleepRandomSecondsBetween(1,3);
+            await this.sleepRandomSecondsBetween(1,2);
 
             await this.doRechargeStamina();
 
         } catch (error) {
             console.error(error);
-            this.doRechargeStamina();
+            this.doSingleRobbery();
         }
     }
 
@@ -1004,7 +1034,7 @@ class User {
         if(pUser===null) {
             // Use doFindNightClub() to get user info and stats
 
-            const randomIndex = RandomNumberGenerator.getIntegerRandomNumberBetween(1,7);
+            const randomIndex = RandomNumberGenerator.getIntegerRandomNumberBetween(1,8);
             let responseWhereGrabUserInfo = null;
             switch (randomIndex) {
                 case 1:
@@ -1047,24 +1077,15 @@ class User {
             
             this.#userInfoAndStats = responseWhereGrabUserInfo.user;
 
-
-
-            // this.#pageNavigator.navigateToRobberyPage();
-            // const nightclubsResponse = await this.doFindNightClubAjax();
-            // this.#userInfoAndStats = nightclubsResponse.user;
-
-            // const userFromLocalStorage = this.doFindUserLocalStorage();
-            // this.#userInfoAndStats = userFromLocalStorage.user;
-
         }
         else {
             // Update stats from object user passed to the function
             // This is the case of Single Robbery or Gang Robbery
             this.#userInfoAndStats = pUser;
-            this.#logger.logImportant('REFRESHED USER STATS FROM ROB RESPONSE');
-            this.printUserInfoAndStats();
+            this.#logger.logImportant('REFRESHED USER STATS FROM ROB OR AFTER A RECHARGE STAMINA');
         }
 
+        this.printUserInfoAndStats();
         await this.checkIfTicketsAreEnded();
 
 
@@ -1128,20 +1149,46 @@ class User {
                 this.#nightClubEntered = enterNightclubResponse.nightclub;
                 this.#logger.log(`Enter in rave`);
 
+                // If found someone, try to exit immediately
+                if(this.#nightClubEntered.visitors.length >= 1) {
+                    this.#logger.logImportant("Found visitors:");
+                    for(const visitorFound of this.#nightClubEntered.visitors) {
+                        const stringToLogAsList = [
+                            visitorFound.username,
+                            visitorFound.respect,
+                            visitorFound.level_text_name,
+                            // visitorFound.id,
+                        ];
+                        this.#logger.logImportant(stringToLogAsList.join(' - '));
+                    }
+                    this.#logger.logImportant("WILL EXIT IMMEDIATELY!!!");
 
-                await this.sleepRandomSecondsBetween(this.#delayBeforeBuyDrugInRave.min, this.#delayBeforeBuyDrugInRave.max);
+                    // Exit nightclub
+                    await this.doExitNightclubAjax();
+                    this.#logger.logImportant("EXIT FROM RAVE (pressed Exit button)");
 
-                const boughtDrugResponse = await this.doBuyDrugEnteredNightclubAjax();
-                this.#logger.logImportant(`Bought drug`);
-                this.#logger.logImportant(`Current stamina: ${boughtDrugResponse.user.stamina}`);
+                    await this.doUpdateUserInfoAndStats();
+                    await this.doRechargeStamina();
+                }
+                else {
 
-                // Exit nightclub
-                await this.doExitNightclubAjax();
-                this.#logger.logImportant("EXIT FROM RAVE (pressed Exit button)");
+                    // Perform drug buy
+                    await this.sleepRandomSecondsBetween(this.#delayBeforeBuyDrugInRave.min, this.#delayBeforeBuyDrugInRave.max);
 
-                await this.doUpdateUserInfoAndStats();
+                    const boughtDrugResponse = await this.doBuyDrugEnteredNightclubAjax();
+                    this.doUpdateUserInfoAndStats(boughtDrugResponse.user);
+                    this.#logger.logImportant(`Bought drug`);
+                    this.#logger.logImportant(`Current stamina: ${boughtDrugResponse.user.stamina}`);
+
+                    // Exit nightclub
+                    await this.doExitNightclubAjax();
+                    this.#logger.logImportant("EXIT FROM RAVE (pressed Exit button)");
+                }
 
 
+
+
+                // await this.doUpdateUserInfoAndStats();
             }
             else {
                 this.#logger.log(`Current stamina is: ${this.#userInfoAndStats.stamina}`);
@@ -1301,8 +1348,8 @@ const SingleRobberies = Object.freeze({
 
 // Single Robbery
 // const user = new User({
-//     useFirstRaveOfFavorites: false,
-//     delayBeforeBuyDrugInRave: {min: 0.5, max: 2},
+//     useFirstRaveOfFavorites: true,
+//     delayBeforeBuyDrugInRave: {min: 0.5, max: 1},
 //     userActionToDo: UserActions.SINGLE_ROBBERY,
 // });
 
@@ -1310,30 +1357,32 @@ const SingleRobberies = Object.freeze({
 // Single Robbery Specific Rob
 // const user = new User({
 //     useFirstRaveOfFavorites: false,
-//     delayBeforeBuyDrugInRave: {min: 0.5, max: 2},
+//     delayBeforeBuyDrugInRave: {min: 0.5, max: 1},
 //     userActionToDo: UserActions.SINGLE_ROBBERY_SPECIFIC_ROB,
-//     specificRob: SingleRobberies.CHUCK_NORRIS
+//     specificRob: SingleRobberies.SAFETY_DEPOSIT
 // });
 
 
 // Gang Robbery
 const user = new User({
     useFirstRaveOfFavorites: false,
-    delayBeforeBuyDrugInRave: {min: 0.5, max: 2},
+    delayBeforeBuyDrugInRave: {min: 0.5, max: 1},
     userActionToDo: UserActions.GANG_ROBBERY,
-    specificRob: GangRobberies.STEVEN_SEAGULL
+    specificRob: GangRobberies.AL_CAPONE
 });
 
 // Training
 // const user = new User({
-//     useFirstRaveOfFavorites: false,
+//     useFirstRaveOfFavorites: true,
+//     delayBeforeBuyDrugInRave: {min: 0.5, max: 1},
 //     userActionToDo: UserActions.TRAINING,
 //     trainingsToDoList: [Trainings.MARTIAL_ARTS_30min, Trainings.EDUCATION_30min]
 // });
 
 // Hunting
 // const user = new User({
-//     useFirstRaveOfFavorites: false,
+//     useFirstRaveOfFavorites: true,
+//     delayBeforeBuyDrugInRave: {min: 0.5, max: 1},
 //     huntingOptions: {
 //         victimRespect: {min: 500, max: 4000, hitmanMaxRespect: 3000},
 //         delayBeforeAttackUser: 0.5,
