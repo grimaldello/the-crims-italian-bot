@@ -41,6 +41,7 @@ class Urls {
     static STATE_URL = "https://www.thecrims.com/api/v1/state";
     static ITEMS_URL = "https://www.thecrims.com/api/v1/market/items";
     static PRISON_URL = "https://www.thecrims.com/api/v1/prison";
+    static VISITORS_URL = "https://www.thecrims.com/api/v1/nightclub/visitors";
 }
 
 
@@ -50,7 +51,9 @@ const UserActions = Object.freeze({
     GANG_ROBBERY: "GANG_ROBBERY",
     TRAINING: "TRAINING",
     RECHARGE_ONLY: "RECHARGE_ONLY",
-    HUNTING: "HUNTING"
+    HUNTING: "HUNTING",
+    HUNTING_REMAINING_IN_RAVE: "HUNTING_REMAINING_IN_RAVE",
+
 });
 
 class Logger {
@@ -242,6 +245,8 @@ class User {
     #victimRespect = {};
     #huntingOptions = {};
 
+    #channel = {};
+
     #delayBeforeBuyDrugInRave = {};
 
     constructor(config=null) {
@@ -284,7 +289,8 @@ class User {
         }
 
         // Hunting
-        if(config.userActionToDo === UserActions.HUNTING  &&
+        if( (config.userActionToDo === UserActions.HUNTING || 
+                config.userActionToDo === UserActions.HUNTING_REMAINING_IN_RAVE)  &&
             config.huntingOptions === undefined) {
 
             throw new Error("With HUNTING the parameter huntingOptions cannot be null or undefined");
@@ -319,7 +325,7 @@ class User {
 
     async sleepRandomSecondsBetween(pMin, pMax) {
         const timeToWait = RandomNumberGenerator.getFloatRandomNumberBetween(pMin, pMax)*1000;
-        this.#logger.logImportant(`Seconds to wait ${timeToWait/1000}`);
+        this.#logger.log(`Seconds to wait ${timeToWait/1000}`);
         return await new Promise(
             resolve => setTimeout(
                 resolve,
@@ -337,6 +343,13 @@ class User {
     async doXRequestAjax() {
         return await RequestFactory.makeGETAjaxRequestPromise(
             Urls.REQUEST_ID_URL
+        );
+    }
+
+    async doGetRaveVisitors() {
+        return await RequestFactory.makeGETAjaxRequestPromise(
+            Urls.VISITORS_URL,
+            this.#customHeaders
         );
     }
 
@@ -614,7 +627,8 @@ class User {
             // TRAINING energy should not be lower than 85 if performing training
             return this.#userInfoAndStats.stamina < 90;
         }
-        else if(this.#userActionToDo === UserActions.HUNTING) {
+        else if(this.#userActionToDo === UserActions.HUNTING ||
+                this.#userActionToDo === UserActions.HUNTING_REMAINING_IN_RAVE) {
             // HUNTING energy should not be lower than 50 if performing hunting
             return this.#userInfoAndStats.stamina < 50;
         }
@@ -642,6 +656,9 @@ class User {
                 break;
             case UserActions.HUNTING:
                 this.doHunting();
+                break;
+            case UserActions.HUNTING_REMAINING_IN_RAVE:
+                this.doHuntingRemainingInRave();
                 break;
             case UserActions.RECHARGE_ONLY:
                 this.#logger.log("Recharge DONE");
@@ -693,6 +710,221 @@ class User {
         }
     }
 
+    async doHuntingRemainingInRave() {
+
+        var self = this;
+
+        self.#nightClubEntered = null;
+
+        let hasBeenAssaultedVictim = false;
+
+        await self.sleepRandomSecondsBetween(1, 2);
+
+        self.#pageNavigator.navigateToRandomPage();
+
+        await self.sleepRandomSecondsBetween(1, 2);
+
+        self.#pageNavigator.navigateToNightLifePage();
+
+        await self.sleepRandomSecondsBetween(6, 9);
+
+        // const nightclubsResponse = await this.doFindNightClubAjax();
+        let nightclubsResponse = self.doFindNightClubLocalStorage();
+
+        // if useOnlyHookersHouse is true, filter only hooker mansions
+        if(self.#huntingOptions.useOnlyHookersHouse) {
+            nightclubsResponse.nightclubs = nightclubsResponse.nightclubs
+            .filter((nClub)=>{ return nClub.business_id == 4 });
+        }
+
+        // Take the random rave from those without a limit on respect and level
+        const filteredRavesList = nightclubsResponse.nightclubs
+            .filter((nClub)=>{ return nClub.min_respect == null })
+            .filter((nClub)=>{ return nClub.level == null });
+
+
+        if(filteredRavesList.length === 0) {
+            self.#logger.logImportant(`NOT FOUND A SUITABLE RAVE. TRY TO SEARCH ANOTHER RAVE`);
+            self.doHuntingRemainingInRave();
+        }
+
+        const randomIndexRave = RandomNumberGenerator.getIntegerRandomNumberBetween(0, filteredRavesList.length -1);
+        self.#nightClubToEnter = filteredRavesList[randomIndexRave];
+
+        self.#logger.log(`Rave type: ${self.#nightClubToEnter.name}`);
+        self.#logger.log(`Rave id: ${self.#nightClubToEnter.id}`);
+
+        let enterNightclubResponse;
+
+        try {
+            // Enter nightclub
+            enterNightclubResponse = await self.doEnterNightclubAjax();
+            self.#nightClubEntered = enterNightclubResponse.nightclub;
+            self.#logger.logImportant(`Enter in rave.`);
+            self.#logger.logImportant(`Checking/Waiting for visitors...`);
+
+        } catch (error) {
+            self.#logger.logImportant(`ERROR ENTERING IN RAVE. TRY TO SEARCH ANOTHER RAVE.`);
+            // this.doExitNightclubAjax();
+            // this.#logger.logImportant("EXIT FROM RAVE (pressed Exit button)")
+            // await this.sleepRandomSecondsBetween(4,5);
+            self.doHuntingRemainingInRave();
+        }
+
+        let singleAssaultResult = null;
+        let candidateVictim = null;
+
+        const timeToWait = 5;
+        const pidExitRaveTimeOut = setTimeout(async () => {
+            self.#logger.logImportant(`Passed ${timeToWait} seconds and no visitors come inside rave. Exiting rave...`);
+            self.doExitNightclubAjax();
+            self.#logger.logImportant("EXIT FROM RAVE (pressed Exit button)");
+            await self.sleepRandomSecondsBetween(3,5);
+            self.doHuntingRemainingInRave();
+        }, timeToWait*1000);
+
+        let visitorsResponse = null;
+
+        // Override the original The Crims _nightclub-update-visitors callback of websocket channel
+        window.userChannel.callbacks._callbacks['_nightclub-update-visitors'][0].fn = async (wsEventMessage)=>{
+            if(wsEventMessage.indexOf('entered') > -1) {
+
+                self.#logger.logImportant("Visitor come inside rave");
+                visitorsResponse = await self.doGetRaveVisitors();
+
+                if(visitorsResponse.length === 1) {
+                    candidateVictim = visitorsResponse[0];
+
+                    const isVictimHitman = candidateVictim.character_text_name.indexOf('HITMAN') > -1;
+        
+                    self.#victimRespect.max = isVictimHitman ? self.#huntingOptions.victimRespect.hitmanMaxRespect : self.#huntingOptions.victimRespect.max;
+                    self.#victimRespect.min = self.#huntingOptions.victimRespect.min;
+        
+                    if(isVictimHitman) {
+                        self.#logger.logImportant(`Victim is a HITMAN. Max respect used: ${self.#victimRespect.max}`)
+                    }
+                    else {
+                        self.#logger.logImportant(`Victim is NOT a HITMAN. Max respect used: ${self.#victimRespect.max}`)
+                    }
+        
+                    if((candidateVictim.respect <= self.#victimRespect.max) &&
+                                (candidateVictim.respect >= self.#victimRespect.min)) {
+        
+                        self.#singleAssaultToDo = {
+                            victimId: candidateVictim.id,
+                            encounteredAt: candidateVictim.encountered_at,
+                            assaultKey: candidateVictim.assault_key,
+                            createdAt: Math.floor(candidateVictim.encountered_at) - RandomNumberGenerator.getIntegerRandomNumberBetween(1,3)
+                        }
+    
+                        try {
+        
+                            await self.sleepRandomSecondsBetween(
+                                self.#huntingOptions.delayBeforeAttackUser,
+                                self.#huntingOptions.delayBeforeAttackUser);
+
+                            self.#logger.logImportant("ATTACKING USER");
+
+                            clearTimeout(pidExitRaveTimeOut);
+                            singleAssaultResult = self.doExecuteSingleAssaultAjax();
+                            hasBeenAssaultedVictim = true;
+        
+                        } catch (error) {
+                            clearTimeout(pidExitRaveTimeOut);
+                            console.log(console.error);
+                            self.doExitNightclubAjax();
+                            self.#logger.logImportant("EXIT FROM RAVE (pressed Exit button)")
+                            await self.sleepRandomSecondsBetween(4,5);
+                            self.doHuntingRemainingInRave();
+                        }
+                    }
+                    else {
+                        clearTimeout(pidExitRaveTimeOut);
+                        self.doExitNightclubAjax();
+                        self.#logger.logImportant("EXIT FROM RAVE (pressed Exit button)");
+                        // self.doHuntingWebSocket();
+                    }
+
+                    if(hasBeenAssaultedVictim === true){
+                        self.#logger.logImportant(`Assaulted a User: ${candidateVictim.username}`);
+                        // if(singleAssaultResult === undefined) {
+                        //     this.#logger.logImportant('USER HAS PROTECTION ENABLED. UNFORTUNATELY NOT KILLED... :)');
+                        // }
+                        // else if(singleAssaultResult !== undefined && singleAssaultResult.messages[0] && singleAssaultResult.messages[0][0]) {
+                        //     singleAssaultResult.messages[0][0].split("<br>").map((e)=>{this.#logger.logSuccess(`${e} \n`)});
+                        // }
+                        singleAssaultResult.then((assaultResponse)=>{
+                            if(assaultResponse !== undefined && assaultResponse.messages !== undefined && assaultResponse.messages[0] && assaultResponse.messages[0][0]) {
+                                assaultResponse.messages[0][0].split("<br>").map((e)=>{self.#logger.logSuccess(`${e} \n`)});
+                            }
+                            else {
+            
+                                console.log(assaultResponse);
+                            }
+                        });
+                        self.#logger.logImportant('CHECK LOGS FOR DETAILS ABOUT ASSAULT');
+            
+                        await self.sleepRandomSecondsBetween(5,6);
+                        await self.doRechargeStamina();
+                    }
+                    else {
+                        if(visitorsResponse.length > 0) {
+                            self.#logger.logImportant("Found visitors");
+                            for(const visitorFound of visitorsResponse) {
+                                const stringToLogAsList = [
+                                    visitorFound.username,
+                                    visitorFound.respect,
+                                    visitorFound.level_text_name,
+                                    // visitorFound.id,
+                                ];
+                                self.#logger.logImportant(stringToLogAsList.join(' - '));
+                                if(visitorFound.respect > self.#victimRespect.max) {
+                                    self.#logger.logImportant(`Found VISITOR WITH RESPECT GREATER than MAX RESPECT(${self.#victimRespect.max}): ${visitorFound.respect}`);
+                                }
+                                else if(visitorFound.respect < self.#victimRespect.min) {
+                                    self.#logger.logImportant(`Found VISITOR WITH RESPECT LOWER than MIN RESPECT(${self.#victimRespect.min}): ${visitorFound.respect}`);
+                                }
+                            }
+                        }
+                        else {
+                            self.#logger.log("NO VISITORS FOUND");
+                        }
+                        clearTimeout(pidExitRaveTimeOut);
+                        self.#logger.logImportant("Nothing DONE");
+                        await self.sleepRandomSecondsBetween(1,3);
+                        self.doHuntingRemainingInRave();
+                    }
+                }
+                else {
+                    self.#logger.logImportant("MORE THAN 1 VISITOR IN RAVE");
+                    clearTimeout(pidExitRaveTimeOut);
+                    self.doExitNightclubAjax();
+                    self.#logger.logImportant("EXIT FROM RAVE (pressed Exit button)");
+                    if(visitorsResponse.length > 0) {
+                        self.#logger.logImportant("Found visitors");
+                        for(const visitorFound of visitorsResponse) {
+                            const stringToLogAsList = [
+                                visitorFound.username,
+                                visitorFound.respect,
+                                visitorFound.level_text_name,
+                                // visitorFound.id,
+                            ];
+                            self.#logger.logImportant(stringToLogAsList.join(' - '));
+                            if(visitorFound.respect > self.#victimRespect.max) {
+                                self.#logger.logImportant(`Found VISITOR WITH RESPECT GREATER than MAX RESPECT(${self.#victimRespect.max}): ${visitorFound.respect}`);
+                            }
+                            else if(visitorFound.respect < self.#victimRespect.min) {
+                                self.#logger.logImportant(`Found VISITOR WITH RESPECT LOWER than MIN RESPECT(${self.#victimRespect.min}): ${visitorFound.respect}`);
+                            }
+                        }
+                    }
+                    await self.sleepRandomSecondsBetween(1,3);
+                    self.doHuntingRemainingInRave();
+                }
+            }
+        };        
+    }
+
     async doHunting() {
 
         this.#nightClubEntered = null;
@@ -736,6 +968,7 @@ class User {
         this.#logger.log(`Rave id: ${this.#nightClubToEnter.id}`);
 
         let enterNightclubResponse;
+
         try {
             // Enter nightclub
             enterNightclubResponse = await this.doEnterNightclubAjax();
@@ -852,38 +1085,54 @@ class User {
     }
 
     // async doGangRobberyWebSocket() {
-    //     // $.getScript( "https://js.pusher.com/5.1.1/pusher.min.js", function( data, textStatus, jqxhr ) {
-    //         // console.log( data ); // Data returned
-    //         // console.log( textStatus ); // Success
-    //         // console.log( jqxhr.status ); // 200
-    //         // console.log( "Load was performed." );
-
-    //         var pusher = new Pusher("4d1de0a9de985ae2f51d", {
-    //             cluster: "",
-    //         });
-
-    //         var channel = pusher.subscribe("68d16904064d696ac2b8d43b89e55404");
-
-
-    //         channel.bind("update-planned-robbery", (data) => {
-    //             console.log(data);
-    //             if(data.indexOf('create') > -1) {
-    //                console.log("NEED TO ACCEPT");
-    //             }
-    //             else if(data.indexOf('populate') > -1) {
-    //                 console.log("NEED TO EXECUTE");
-    //             }
-    //         });
-
-    //         channel.bind("nightclub-update", (data) => {
-    //             console.log(data);
-    //         });
-    //         channel.bind("nightclub-update-visitors", (data) => {
-    //             console.log(data);
-    //         });
-
         
-    //     // });
+    //     var self = this;
+
+    //     this.#pageNavigator.navigateToRobberyPage();
+
+    //     // await this.sleepRandomSecondsBetween(0.2, 0.4);
+
+    //     window.userChannel.callbacks._callbacks['_update-planned-robbery'][0].fn = async (wsEventMessage)=>{
+
+    //         const isEnabledAccept = wsEventMessage.indexOf('create') > -1;
+    //         const isEnabledExecute = wsEventMessage.indexOf('populate') > -1;
+
+    //         if(isEnabledAccept) {
+    //             const gangRobberyResponse = await this.doAcceptGangRobberyAjax();
+    //             this.#logger.log("Accepted Gang Robbery");
+        
+    //             // Update user info and perform decision
+    //             this.postGangRobberyWebSocket(gangRobberyResponse);
+    //         }
+    //         else if(isEnabledExecute) {
+    //             const gangRobberyResponse = await this.doExecuteGangRobberyAjax();
+
+    //             this.#logger.log("Executed Gang Robbery");
+        
+    //             // Update user info and perform decision
+    //             this.postGangRobberyWebSocket(gangRobberyResponse);
+    //         }
+    //         else {
+    //             this.#logger.log("Waiting for others to accept...");
+    //         }
+
+    //     };
+
+    // }
+
+    // async postGangRobberyWebSocket(pGangRobberyResponse) {
+    //     // Update user info
+    //     this.doUpdateUserInfoAndStats(pGangRobberyResponse.user);
+    //     // await this.sleepRandomSecondsBetween(0.1, 1);
+
+    //     // this.#pageNavigator.navigateToRandomPage();
+
+    //     if(await this.needToRecharge()) {
+    //         await this.doRechargeStamina();
+    //     }
+    //     else {
+    //         this.doGangRobberyWebSocket();
+    //     }
     // }
 
     async doGangRobbery() {
@@ -909,13 +1158,13 @@ class User {
             else if(isEnabledExecute) {
                 const gangRobberyResponse = await this.doExecuteGangRobberyAjax();
 
-                this.#logger.log("Executed Gang Robbery");
+                this.#logger.logImportant("Executed Gang Robbery");
 
                 // Update user info and perform decision
                 this.postGangRobbery(gangRobberyResponse);
             }
             else {
-                this.#logger.log("Waiting for others to accept...");
+                this.#logger.logImportant("Waiting for others to accept...");
                 // this.#pageNavigator.navigateToRandomPage();
 
                 this.doGangRobbery();
@@ -928,6 +1177,8 @@ class User {
 
 
     }
+
+
 
     async postGangRobbery(pGangRobberyResponse) {
         // Update user info
@@ -948,23 +1199,30 @@ class User {
     calculateSingleRobberyToDo(pSingleRobberiesList) {
         let calculatedRobToDo = null;
 
-        switch (this.#userActionToDo) {
-            case UserActions.SINGLE_ROBBERY:
-                calculatedRobToDo = pSingleRobberiesList
-                    .filter((rob)=>{ return rob.successprobability === 100} )   // Filter all rob wih success 100
-                    .filter((rob)=>{ return rob.rewards.length === 0} ) // Filter all robs without rewards (low money)
-                    .filter((rob)=>{ return rob.energy <= this.#userInfoAndStats.stamina} ) // Filter all rob that can be performed based on current user stamina
-                    .reduce((rob1, rob2)=>{ return rob1.difficulty > rob2.difficulty ? rob1 : rob2} )  // Get the one with max difficulty
-                break;
-            case UserActions.SINGLE_ROBBERY_SPECIFIC_ROB:
-                calculatedRobToDo = pSingleRobberiesList
-                .filter((rob)=>{ return rob.id === this.#specificRob.id})[0]; // Find the rob with the specified id
-                break;
-            default:
-                this.#logger.log(`No Single Robbery Action Enum matched`);
-                throw new Error("No Single Robbery Action Enum matched");
-                break;
+        try {
+            switch (this.#userActionToDo) {
+                case UserActions.SINGLE_ROBBERY:
+                    calculatedRobToDo = pSingleRobberiesList
+                        .filter((rob)=>{ return rob.successprobability === 100} )   // Filter all rob wih success 100
+                        .filter((rob)=>{ return rob.rewards.length === 0} ) // Filter all robs without rewards (low money)
+                        .filter((rob)=>{ return rob.energy <= this.#userInfoAndStats.stamina} ) // Filter all rob that can be performed based on current user stamina
+                        .reduce((rob1, rob2)=>{ return rob1.difficulty > rob2.difficulty ? rob1 : rob2} )  // Get the one with max difficulty
+                    break;
+                case UserActions.SINGLE_ROBBERY_SPECIFIC_ROB:
+                    calculatedRobToDo = pSingleRobberiesList
+                    .filter((rob)=>{ return rob.id === this.#specificRob.id})[0]; // Find the rob with the specified id
+                    break;
+                default:
+                    this.#logger.log(`No Single Robbery Action Enum matched`);
+                    throw new Error("No Single Robbery Action Enum matched");
+                    break;
+            }
+        } catch (error) {
+            this.#logger.logImportant(`ENERGY IS TOO LOW FOR ANY SINGLE ROB`);
+            this.#logger.logImportant(`RECHARGE IS NEEDED`);
+
         }
+
 
         return calculatedRobToDo;
     }
@@ -979,12 +1237,10 @@ class User {
 
             // Find Single Robberies List
             const singleRobberiesResponse = this.doFindSingleRobberiesLocalStorage();
+            // Calculate Single Robbery to do
             this.#singleRobberyCalculatedToDo = this.calculateSingleRobberyToDo(singleRobberiesResponse.singleRobberies);
 
-
-            // Calculate Single Robbery to do
-
-            // If this.#singleRobberyCalculatedToDo is null, it means that energy
+            // If this.#singleRobberyCalculatedToDo is null, it means that energy is lower
             if(this.#singleRobberyCalculatedToDo !== null) {
                 this.#logger.logImportant(`Single Robbery calculated: ${this.#singleRobberyCalculatedToDo.long_name}`);
 
@@ -997,9 +1253,10 @@ class User {
                 this.doUpdateUserInfoAndStats(singleRobberyResponse.user);
             }
 
-            await this.sleepRandomSecondsBetween(1,2);
-
-            await this.doRechargeStamina();
+            // await this.sleepRandomSecondsBetween(1,2);
+            if(await this.needToRecharge()) {
+                await this.doRechargeStamina();
+            }
 
         } catch (error) {
             console.error(error);
@@ -1167,8 +1424,12 @@ class User {
                     await this.doExitNightclubAjax();
                     this.#logger.logImportant("EXIT FROM RAVE (pressed Exit button)");
 
-                    await this.doUpdateUserInfoAndStats();
-                    await this.doRechargeStamina();
+
+                    // await this.doUpdateUserInfoAndStats();
+                    // await this.doRechargeStamina();
+
+                    await this.sleepRandomSecondsBetween(1,3);
+
                 }
                 else {
 
@@ -1349,7 +1610,7 @@ const SingleRobberies = Object.freeze({
 // Single Robbery
 // const user = new User({
 //     useFirstRaveOfFavorites: true,
-//     delayBeforeBuyDrugInRave: {min: 0.5, max: 1},
+//     delayBeforeBuyDrugInRave: {min: 0.3, max: 0.5},
 //     userActionToDo: UserActions.SINGLE_ROBBERY,
 // });
 
@@ -1357,24 +1618,24 @@ const SingleRobberies = Object.freeze({
 // Single Robbery Specific Rob
 // const user = new User({
 //     useFirstRaveOfFavorites: false,
-//     delayBeforeBuyDrugInRave: {min: 0.5, max: 1},
+//     delayBeforeBuyDrugInRave: {min: 0.3, max: 0.5},
 //     userActionToDo: UserActions.SINGLE_ROBBERY_SPECIFIC_ROB,
-//     specificRob: SingleRobberies.SAFETY_DEPOSIT
+//     specificRob: SingleRobberies.COMPUTER_STORE
 // });
 
 
 // Gang Robbery
-const user = new User({
-    useFirstRaveOfFavorites: false,
-    delayBeforeBuyDrugInRave: {min: 0.5, max: 1},
-    userActionToDo: UserActions.GANG_ROBBERY,
-    specificRob: GangRobberies.AL_CAPONE
-});
+// const user = new User({
+//     useFirstRaveOfFavorites: false,
+//     delayBeforeBuyDrugInRave: {min: 0.3, max: 0.5},
+//     userActionToDo: UserActions.GANG_ROBBERY,
+//     specificRob: GangRobberies.DRUG_FACTORY
+// });
 
 // Training
 // const user = new User({
 //     useFirstRaveOfFavorites: true,
-//     delayBeforeBuyDrugInRave: {min: 0.5, max: 1},
+//     delayBeforeBuyDrugInRave: {min: 0.3, max: 0.5},
 //     userActionToDo: UserActions.TRAINING,
 //     trainingsToDoList: [Trainings.MARTIAL_ARTS_30min, Trainings.EDUCATION_30min]
 // });
@@ -1382,13 +1643,25 @@ const user = new User({
 // Hunting
 // const user = new User({
 //     useFirstRaveOfFavorites: true,
-//     delayBeforeBuyDrugInRave: {min: 0.5, max: 1},
+//     delayBeforeBuyDrugInRave: {min: 0.3, max: 0.5},
 //     huntingOptions: {
 //         victimRespect: {min: 500, max: 4000, hitmanMaxRespect: 3000},
 //         delayBeforeAttackUser: 0.5,
 //         useOnlyHookersHouse: false
 //     },
 //     userActionToDo: UserActions.HUNTING,
+// });
+
+// Hunting Remaining in Rave
+// const user = new User({
+//     useFirstRaveOfFavorites: true,
+//     delayBeforeBuyDrugInRave: {min: 0.3, max: 0.5},
+//     huntingOptions: {
+//         victimRespect: {min: 500, max: 9000, hitmanMaxRespect: 6000},
+//         delayBeforeAttackUser: 0.5,
+//         useOnlyHookersHouse: false
+//     },
+//     userActionToDo: UserActions.HUNTING_REMAINING_IN_RAVE,
 // });
 
 // Always call initialize method

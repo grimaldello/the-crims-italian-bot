@@ -237,7 +237,7 @@ const user = new User({
 
 // ALL OTHER TEMPLATES MUST BE DELETED OR PREFIXED WITH //
 ```
-With this bot configuration will be automatically executed the **Trainings** specified in `trainingsToDoList`.\
+With this configuration the bot will automatically execute the **Trainings** specified in `trainingsToDoList`.\
 In the above example, will be executed:
 - A 30 minutes Martial Arts training
 - A 30 minutes Education training
@@ -272,7 +272,7 @@ const user = new User({
 
 // ALL OTHER TEMPLATES MUST BE DELETED OR PREFIXED WITH //
 ```
-With this bot configuration the bot will automatically start **Hunting** in random raves users to assault.\
+With this configuration the bot will automatically start **Hunting** in random raves to assault users.\
 Before kill someone, the following checks are performed:
 - checks if as soon as entered the rave there's only one visitor: if there are more than 1 visitors, it will exit immediately (this is to avoid to be killed by another visitors in case of multiple visitors in the rave).
 - checks if victim respect is between min and max defined in property `victimRespect`. In case victim is a HITMAN, the max limit in this case is defined by the property `hitmanMaxRespect`.
@@ -280,6 +280,25 @@ Before kill someone, the following checks are performed:
 If the above conditions are matched, then it will kill the victim.
 
 Once killed someone, it immediately presses Exit button, to exit from rave.
+
+## Hunting Remaining in Rave Action
+```Javascript
+// Hunting Remaining in Rave
+const user = new User({
+    useFirstRaveOfFavorites: true,
+    delayBeforeBuyDrugInRave: {min: 0.3, max: 0.5},
+    huntingOptions: {
+        victimRespect: {min: 500, max: 9000, hitmanMaxRespect: 6000},
+        delayBeforeAttackUser: 0.5,
+        useOnlyHookersHouse: false
+    },
+    userActionToDo: UserActions.HUNTING_REMAINING_IN_RAVE,
+});
+
+// ALL OTHER TEMPLATES MUST BE DELETED OR PREFIXED WITH //
+```
+With this configuration the bot will automatically start **Hunting** as in `UserActions.HUNTING` with the only difference that if it doesn't found someone it will remain inside waiting for potentially victim.\
+
 
 
 
