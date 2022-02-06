@@ -132,6 +132,7 @@ class PageNavigator {
         // Remove ROBBERY and NIGHTLIFE
         delete menuMapClone.ROBBERY;
         delete menuMapClone.NIGHTLIFE;
+        
         const menuMapCloneLength = Object.keys(menuMapClone).length;
         const randomIndex = RandomNumberGenerator.getIntegerRandomNumberBetween(0, menuMapCloneLength-1);
         const randomKeyOfMenuMap = Object.keys(menuMapClone)[randomIndex];
@@ -767,14 +768,12 @@ class User {
 
         let singleAssaultResult = null;
         let candidateVictim = null;
-
-
-
         let visitorsResponse = null;
+        let pidExitRaveTimeOut = null;
 
         // Override the original The Crims _nightclub-update-visitors callback of websocket channel
         window.userChannel.callbacks._callbacks['_nightclub-update-visitors'][0].fn = async (wsEventMessage)=>{
-            if(wsEventMessage.indexOf('entered') > -1) {
+            if(wsEventMessage.indexOf('entered') > -1 && pidExitRaveTimeOut !== null) {
 
                 self.#logger.logImportant("Visitor come inside rave");
 
@@ -782,11 +781,19 @@ class User {
                 // CRITICAL LINE OF CODE
                 // In case of lag of Network/The Crims this could 
                 // slow down the bot and so let other user to kill us
-   
-                visitorsResponse = await self.doGetRaveVisitors();
+                try {
+                    visitorsResponse = await self.doGetRaveVisitors();
+                } catch (error) {
+                    clearTimeout(pidExitRaveTimeOut);
+                    console.log(console.error);
+                    self.doExitNightclubAjax();
+                    self.#logger.logImportant("EXIT FROM RAVE (pressed Exit button)")
+                    await self.sleepRandomSecondsBetween(4,5);
+                    self.doHuntingRemainingInRave();
+                }
                 //***************************
 
-                if(visitorsResponse.length === 1) {
+                if(visitorsResponse && visitorsResponse.length === 1) {
                     candidateVictim = visitorsResponse[0];
 
                     const isVictimHitman = candidateVictim.character_text_name.indexOf('HITMAN') > -1;
@@ -894,7 +901,7 @@ class User {
                     clearTimeout(pidExitRaveTimeOut);
                     self.doExitNightclubAjax();
                     self.#logger.logImportant("EXIT FROM RAVE (pressed Exit button)");
-                    if(visitorsResponse.length > 0) {
+                    if(visitorsResponse && visitorsResponse.length > 0) {
                         self.#logger.logImportant("Found visitors");
                         for(const visitorFound of visitorsResponse) {
                             const stringToLogAsList = [
@@ -917,15 +924,16 @@ class User {
                 }
             }
         };
-        
-        const timeToWait = 10;
-        const pidExitRaveTimeOut = setTimeout(async () => {
+
+        const timeToWait = 6;
+        pidExitRaveTimeOut = setTimeout(async () => {
             self.#logger.logImportant(`Passed ${timeToWait} seconds and no visitors come inside rave.`);
-            // self.doExitNightclubAjax();
-            // self.#logger.logImportant("EXIT FROM RAVE (pressed Exit button)");
-            // await self.sleepRandomSecondsBetween(3,5);
+            self.doExitNightclubAjax();
+            self.#logger.logImportant("EXIT FROM RAVE (pressed Exit button)");
+            await self.sleepRandomSecondsBetween(3,5);
             self.doHuntingRemainingInRave();
         }, timeToWait*1000);
+
     }
 
     async doHunting() {
