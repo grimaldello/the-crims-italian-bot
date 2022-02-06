@@ -713,19 +713,13 @@ class User {
     async doHuntingRemainingInRave() {
 
         var self = this;
-
+        let hasBeenAssaultedVictim = false;
         self.#nightClubEntered = null;
 
-        let hasBeenAssaultedVictim = false;
-
-        await self.sleepRandomSecondsBetween(1, 2);
-
+        // await self.sleepRandomSecondsBetween(1, 2);
         self.#pageNavigator.navigateToRandomPage();
-
-        await self.sleepRandomSecondsBetween(1, 2);
-
+        await self.sleepRandomSecondsBetween(2, 3);
         self.#pageNavigator.navigateToNightLifePage();
-
         await self.sleepRandomSecondsBetween(6, 9);
 
         // const nightclubsResponse = await this.doFindNightClubAjax();
@@ -774,14 +768,7 @@ class User {
         let singleAssaultResult = null;
         let candidateVictim = null;
 
-        const timeToWait = 5;
-        const pidExitRaveTimeOut = setTimeout(async () => {
-            self.#logger.logImportant(`Passed ${timeToWait} seconds and no visitors come inside rave. Exiting rave...`);
-            self.doExitNightclubAjax();
-            self.#logger.logImportant("EXIT FROM RAVE (pressed Exit button)");
-            await self.sleepRandomSecondsBetween(3,5);
-            self.doHuntingRemainingInRave();
-        }, timeToWait*1000);
+
 
         let visitorsResponse = null;
 
@@ -790,7 +777,14 @@ class User {
             if(wsEventMessage.indexOf('entered') > -1) {
 
                 self.#logger.logImportant("Visitor come inside rave");
+
+                //***************************
+                // CRITICAL LINE OF CODE
+                // In case of lag of Network/The Crims this could 
+                // slow down the bot and so let other user to kill us
+   
                 visitorsResponse = await self.doGetRaveVisitors();
+                //***************************
 
                 if(visitorsResponse.length === 1) {
                     candidateVictim = visitorsResponse[0];
@@ -922,7 +916,16 @@ class User {
                     self.doHuntingRemainingInRave();
                 }
             }
-        };        
+        };
+        
+        const timeToWait = 10;
+        const pidExitRaveTimeOut = setTimeout(async () => {
+            self.#logger.logImportant(`Passed ${timeToWait} seconds and no visitors come inside rave.`);
+            // self.doExitNightclubAjax();
+            // self.#logger.logImportant("EXIT FROM RAVE (pressed Exit button)");
+            // await self.sleepRandomSecondsBetween(3,5);
+            self.doHuntingRemainingInRave();
+        }, timeToWait*1000);
     }
 
     async doHunting() {
@@ -1646,23 +1649,23 @@ const SingleRobberies = Object.freeze({
 //     delayBeforeBuyDrugInRave: {min: 0.3, max: 0.5},
 //     huntingOptions: {
 //         victimRespect: {min: 500, max: 4000, hitmanMaxRespect: 3000},
-//         delayBeforeAttackUser: 0.5,
+//         delayBeforeAttackUser: 0.1,
 //         useOnlyHookersHouse: false
 //     },
 //     userActionToDo: UserActions.HUNTING,
 // });
 
 // Hunting Remaining in Rave
-// const user = new User({
-//     useFirstRaveOfFavorites: true,
-//     delayBeforeBuyDrugInRave: {min: 0.3, max: 0.5},
-//     huntingOptions: {
-//         victimRespect: {min: 500, max: 9000, hitmanMaxRespect: 6000},
-//         delayBeforeAttackUser: 0.5,
-//         useOnlyHookersHouse: false
-//     },
-//     userActionToDo: UserActions.HUNTING_REMAINING_IN_RAVE,
-// });
+const user = new User({
+    useFirstRaveOfFavorites: true,
+    delayBeforeBuyDrugInRave: {min: 0.3, max: 0.5},
+    huntingOptions: {
+        victimRespect: {min: 500, max: 18000, hitmanMaxRespect: 10000},
+        delayBeforeAttackUser: 0.1,
+        useOnlyHookersHouse: false
+    },
+    userActionToDo: UserActions.HUNTING_REMAINING_IN_RAVE,
+});
 
 // Always call initialize method
 await user.initializeInfo();
