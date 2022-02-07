@@ -783,10 +783,12 @@ class User {
             self.doHuntingRemainingInRave();
         }, timeToWait*1000);
 
+        let processingMessage = false;
+
         // Override the original The Crims _nightclub-update-visitors callback of websocket channel
         window.userChannel.callbacks._callbacks['_nightclub-update-visitors'][0].fn = async (wsEventMessage)=>{
-            if(wsEventMessage.indexOf('entered') > -1 && pidExitRaveTimeOut !== null) {
-
+            if(wsEventMessage.indexOf('entered') > -1 && pidExitRaveTimeOut !== null && !processingMessage) {
+                processingMessage = true;
                 self.#logger.logImportant("Visitor come inside rave");
 
                 //***************************
@@ -1165,7 +1167,7 @@ class User {
         try {
             this.#pageNavigator.navigateToRobberyPage();
 
-            await this.sleepRandomSecondsBetween(0.2, 0.4);
+            await this.sleepRandomSecondsBetween(0.5, 1);
 
             let isEnabledAccept = $($("#gangrobbery-accept")[0]).attr("style") === undefined || $($("#gangrobbery-accept")[0]).attr("style") === '';
             let isEnabledExecute = $($("#gangrobbery-execute")[0]).attr("style") === undefined || $($("#gangrobbery-execute")[0]).attr("style") === '';
@@ -1645,7 +1647,7 @@ const SingleRobberies = Object.freeze({
 //     useFirstRaveOfFavorites: false,
 //     delayBeforeBuyDrugInRave: {min: 0.3, max: 0.5},
 //     userActionToDo: UserActions.SINGLE_ROBBERY_SPECIFIC_ROB,
-//     specificRob: SingleRobberies.COMPUTER_STORE
+//     specificRob: SingleRobberies.LOCAL_DEALER
 // });
 
 
@@ -1654,7 +1656,7 @@ const SingleRobberies = Object.freeze({
 //     useFirstRaveOfFavorites: false,
 //     delayBeforeBuyDrugInRave: {min: 0.3, max: 0.5},
 //     userActionToDo: UserActions.GANG_ROBBERY,
-//     specificRob: GangRobberies.DRUG_FACTORY
+//     specificRob: GangRobberies.AL_CAPONE
 // });
 
 // Training
@@ -1678,16 +1680,16 @@ const SingleRobberies = Object.freeze({
 // });
 
 // Hunting Remaining in Rave
-const user = new User({
-    useFirstRaveOfFavorites: true,
-    delayBeforeBuyDrugInRave: {min: 0.3, max: 0.5},
-    huntingOptions: {
-        victimRespect: {min: 500, max: 18000, hitmanMaxRespect: 10000},
-        delayBeforeAttackUser: 0.1,
-        useOnlyHookersHouse: false
-    },
-    userActionToDo: UserActions.HUNTING_REMAINING_IN_RAVE,
-});
+// const user = new User({
+//     useFirstRaveOfFavorites: true,
+//     delayBeforeBuyDrugInRave: {min: 0.3, max: 0.5},
+//     huntingOptions: {
+//         victimRespect: {min: 500, max: 20000, hitmanMaxRespect: 15000},
+//         delayBeforeAttackUser: 0.1,
+//         useOnlyHookersHouse: false
+//     },
+//     userActionToDo: UserActions.HUNTING_REMAINING_IN_RAVE,
+// });
 
 // Always call initialize method
 await user.initializeInfo();
