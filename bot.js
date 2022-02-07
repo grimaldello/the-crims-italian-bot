@@ -771,6 +771,18 @@ class User {
         let visitorsResponse = null;
         let pidExitRaveTimeOut = null;
 
+        let timeoutTriggered = false;
+
+        const timeToWait = 6;
+        pidExitRaveTimeOut = setTimeout(async () => {
+            timeoutTriggered = true;
+            self.#logger.logImportant(`Passed ${timeToWait} seconds and no visitors come inside rave.`);
+            self.doExitNightclubAjax();
+            self.#logger.logImportant("EXIT FROM RAVE (pressed Exit button)");
+            await self.sleepRandomSecondsBetween(3,5);
+            self.doHuntingRemainingInRave();
+        }, timeToWait*1000);
+
         // Override the original The Crims _nightclub-update-visitors callback of websocket channel
         window.userChannel.callbacks._callbacks['_nightclub-update-visitors'][0].fn = async (wsEventMessage)=>{
             if(wsEventMessage.indexOf('entered') > -1 && pidExitRaveTimeOut !== null) {
@@ -784,12 +796,14 @@ class User {
                 try {
                     visitorsResponse = await self.doGetRaveVisitors();
                 } catch (error) {
-                    clearTimeout(pidExitRaveTimeOut);
-                    console.log(console.error);
-                    self.doExitNightclubAjax();
-                    self.#logger.logImportant("EXIT FROM RAVE (pressed Exit button)")
-                    await self.sleepRandomSecondsBetween(4,5);
-                    self.doHuntingRemainingInRave();
+                    if(!timeoutTriggered) {
+                        // clearTimeout(pidExitRaveTimeOut);
+                        // console.log(console.error);
+                        // self.doExitNightclubAjax();
+                        // self.#logger.logImportant("EXIT FROM RAVE (pressed Exit button)")
+                        // await self.sleepRandomSecondsBetween(4,5);
+                        // self.doHuntingRemainingInRave();
+                    }
                 }
                 //***************************
 
@@ -831,19 +845,25 @@ class User {
                             hasBeenAssaultedVictim = true;
         
                         } catch (error) {
-                            clearTimeout(pidExitRaveTimeOut);
-                            console.log(console.error);
-                            self.doExitNightclubAjax();
-                            self.#logger.logImportant("EXIT FROM RAVE (pressed Exit button)")
-                            await self.sleepRandomSecondsBetween(4,5);
-                            self.doHuntingRemainingInRave();
+                            if(!timeoutTriggered) {
+                                clearTimeout(pidExitRaveTimeOut);
+                                console.log(console.error);
+                                self.doExitNightclubAjax();
+                                self.#logger.logImportant("EXIT FROM RAVE (pressed Exit button)")
+                                await self.sleepRandomSecondsBetween(4,5);
+                                self.doHuntingRemainingInRave();
+                            }
                         }
                     }
                     else {
-                        clearTimeout(pidExitRaveTimeOut);
-                        self.doExitNightclubAjax();
-                        self.#logger.logImportant("EXIT FROM RAVE (pressed Exit button)");
-                        // self.doHuntingWebSocket();
+                        if(!timeoutTriggered) {
+                            clearTimeout(pidExitRaveTimeOut);
+                            self.doExitNightclubAjax();
+                            self.#logger.logImportant("EXIT FROM RAVE (pressed Exit button)");
+                            await this.sleepRandomSecondsBetween(2,3);
+                            self.doHuntingRemainingInRave();
+                        }
+
                     }
 
                     if(hasBeenAssaultedVictim === true){
@@ -890,17 +910,13 @@ class User {
                         else {
                             self.#logger.log("NO VISITORS FOUND");
                         }
-                        clearTimeout(pidExitRaveTimeOut);
+
                         self.#logger.logImportant("Nothing DONE");
-                        await self.sleepRandomSecondsBetween(1,3);
-                        self.doHuntingRemainingInRave();
                     }
                 }
                 else {
                     self.#logger.logImportant("MORE THAN 1 VISITOR IN RAVE");
-                    clearTimeout(pidExitRaveTimeOut);
-                    self.doExitNightclubAjax();
-                    self.#logger.logImportant("EXIT FROM RAVE (pressed Exit button)");
+
                     if(visitorsResponse && visitorsResponse.length > 0) {
                         self.#logger.logImportant("Found visitors");
                         for(const visitorFound of visitorsResponse) {
@@ -919,20 +935,18 @@ class User {
                             }
                         }
                     }
-                    await self.sleepRandomSecondsBetween(1,3);
-                    self.doHuntingRemainingInRave();
+                    if(!timeoutTriggered) {
+                        clearTimeout(pidExitRaveTimeOut);
+                        self.doExitNightclubAjax();
+                        self.#logger.logImportant("EXIT FROM RAVE (pressed Exit button)");
+                        await self.sleepRandomSecondsBetween(1,3);
+                        self.doHuntingRemainingInRave();
+                    }
                 }
             }
         };
 
-        const timeToWait = 6;
-        pidExitRaveTimeOut = setTimeout(async () => {
-            self.#logger.logImportant(`Passed ${timeToWait} seconds and no visitors come inside rave.`);
-            self.doExitNightclubAjax();
-            self.#logger.logImportant("EXIT FROM RAVE (pressed Exit button)");
-            await self.sleepRandomSecondsBetween(3,5);
-            self.doHuntingRemainingInRave();
-        }, timeToWait*1000);
+
 
     }
 
