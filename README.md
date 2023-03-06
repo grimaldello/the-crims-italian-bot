@@ -1,3 +1,6 @@
+# The Crims Italian Bot V2 new version is here
+[The Crims Italian Bot V2](https://github.com/grimaldello/the-crims-italian-bot-v2)
+
 # The Crims Italian Bot
 Well well well, if you have come to this web page, by just reading the title, probably you know what is all about :)
 
